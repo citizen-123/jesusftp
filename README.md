@@ -1,33 +1,25 @@
-# JESUSFTP — The Good Transfer
+# JESUSFTP
 
-**Let there be files.** A single-binary FTP/FTPS downloader with parallel workers, per-file progress, and a biblical sense of humor. Status labels describe real actions; wordplay stays in the captions. Install the command into `~/.local/bin` or `/usr/local/bin`; no daemon or runtime installation is required.
+**LET THERE BE FILES.**
+
+Download files and folders from an FTP or explicit FTPS server. Download several
+files at once, with a progress bar for each one. Save server details under a
+nickname, enter passwords privately, and keep interrupted downloads for later.
 
 ## Why this exists
 
-Downloading a large FTP archive should not mean retyping hostnames, putting a
-password in an environment file, watching one ambiguous progress bar, or starting
-every interrupted file over. JESUSFTP exists to make that workflow straightforward:
-an installed command, saved connection aliases, private password prompts, and
-visible progress for each active file.
+Retyping hostnames is annoying. One mystery progress bar tells you very little.
+Restarting a large download should not require another act of faith. JESUSFTP
+puts connection aliases, parallel downloads, filters, and optional resume in one
+installed command. No password environment file required.
 
-The biblical wordplay is intentional; unclear status messages are not.
-**Let there be files** is the personality. Downloaded, skipped, failed, and
-resumed are the actual operations.
+This is a **downloader**. It does not provide a server or account, upload files,
+synchronize deletions, or speak SFTP.
 
-## What it does
+## Install
 
-- Downloads individual files, directory trees, or selected paths over FTP and explicit FTPS.
-- Transfers multiple files in parallel, with a scrollable per-file terminal dashboard.
-- Saves connection aliases without saving passwords.
-- Filters files by path, size, and modification time before downloading them.
-- Resumes tracked partial downloads with `--resume`, while checking remote metadata.
-- Preserves existing destination files until their replacements download successfully.
-- Supports dry runs, same-size skipping, plain output, and JSON summaries for scripts.
-
-## Install and run
-
-Build requirements: **Linux, Go 1.27.1 or newer, Git, and GNU Make**.
-No environment file or separate FTP client installation is required.
+You need **Linux, [Go 1.27.1 or newer](https://go.dev/doc/install), Git, and GNU Make**.
+This builds from source; the installed binary does not need Go to run.
 
 ```sh
 git clone https://github.com/citizen-123/jesusftp.git
@@ -37,299 +29,242 @@ export PATH="$HOME/.local/bin:$PATH"
 jesusftp --help
 ```
 
-Add `~/.local/bin` to your shell's startup configuration if it is not already on
-`PATH`. The installed command needs no Go toolchain at runtime. FTPS uses the
-operating system's trusted CA certificates.
+The command is installed at `~/.local/bin/jesusftp`. Add that directory to your
+shell's startup `PATH` if needed. For a system-wide install, use
+`sudo make install PREFIX=/usr/local` instead.
 
-Then save a connection below, or pass an FTP/FTPS URL directly.
+## Download something
 
-## Connection aliases — the Book of Connections
-
-Thou shalt not memorize hostnames. Give each destination a name:
-
-```sh
-jesusftp config add ark ftps://archive.example.org/private --user noah
-jesusftp ark -o ./promised-land
-
-# Different remote paths or a different login user for this invocation only.
-jesusftp ark /daily /reports --user moses
-printf '/daily\n/reports\n' | jesusftp ark --from -
-
-jesusftp config list
-jesusftp config show ark
-jesusftp config set ark ftps://new.example.org/private --user noah
-jesusftp config remove ark
-jesusftp config path
-```
-
-Connections are stored in `$XDG_CONFIG_HOME/jesusftp/config.json`, falling back
-to `~/.config/jesusftp/config.json`. `config path` reveals the actual location.
-The configuration is ordinary, editable JSON:
-
-```json
-{
-  "connections": {
-    "ark": {
-      "url": "ftps://archive.example.org/private",
-      "user": "noah"
-    }
-  }
-}
-```
-
-Names are case-sensitive: begin with an ASCII letter, followed by letters,
-digits, `_`, or `-`. `config` is reserved. `add` refuses an existing name;
-`set` replaces an existing connection completely, including its optional user.
-Explicit `--user` wins over the saved user; explicit remote paths replace the
-saved URL path and are relative to the server root. Direct URLs still work and
-do not read the connection config.
-
-**Passwords are confessed, never engraved on tablets.** Password-bearing URLs
-and password fields are refused in saved connections. Missing credentials are
-prompted privately on each run. Files are written atomically with permissions
-`0600` in a `0700` application directory; concurrent commands preserve each
-other's entries. Invalid configuration is reported, never silently replaced.
-
-## Data sizes and rates
-
-Blessings (`bl`) are the app's data-size unit, not a file count: one blessing
-is one octet. Each larger unit contains 1024 of the previous:
-**bl → Kbl → Mbl → Gbl → Tbl**. `Received` measures newly received data;
-`Avg` is its average rate per second over the run. Percentages show each file's
-transfer progress, including any resumed prefix.
-Use these units with `--min-size` and `--max-size`; bare whole numbers mean
-blessings. Ordinary decimal and binary size suffixes are also accepted.
-
-
-## Download examples
+**Bring your own server.** Its administrator or provider supplies the address,
+remote file/folder path, and login details. The values below are examples, not a
+working account: replace `ftp.example.org`, `/private`, and `noah` with yours.
 
 ```sh
-# A file, or all contents of a directory; anonymous login by default.
-jesusftp ftp://ftp.example.org/pub/archive.tar.gz
-jesusftp ftps://ftp.example.org/pub -o ./downloads
-
-# Filter while discovering: rejected file bodies never cross the wire.
-jesusftp ftps://ftp.example.org/pub -o ./downloads \
-  --include '**/*.zip' --exclude '**/obsolete' --min-size 1Mbl
-
-# Retrieve only recent files, or inspect the selection without writing anything.
-jesusftp ftp://ftp.example.org/pub --after 2026-10-01
-jesusftp ftp://ftp.example.org/pub --dry-run --json
-
-# Restart a completed/partially completed tree without fetching same-size files.
-jesusftp ftp://ftp.example.org/pub -o ./downloads --skip-existing
-
-# Lazarus, come forth: rerun this command after an interrupted transfer.
-jesusftp ark --resume -o ./promised-land
-
-# Multiple explicit paths on the same server.
-jesusftp ftp://ftp.example.org /pub/releases /pub/manual.pdf -o ./downloads
-printf '/pub/a.zip\n/pub/b.zip\n' | jesusftp ftp://ftp.example.org --from -
+jesusftp ftps://ftp.example.org/private --user noah -o ./downloads --resume
 ```
 
-`ftps://` means **explicit TLS**, normally port 21, with certificate verification and encrypted control/data connections. It is not SFTP or implicit FTPS on port 990. `ftp://` sends credentials and data in plaintext: prefer FTPS when available.
+- Enter your password at the hidden prompt. It is not saved. Omit `--user noah`
+  only if the server permits anonymous access; the app does not ask for a username.
+- `-o ./downloads` puts files in a `downloads` folder under your current directory.
+  Downloading `/private` puts its **contents** there, without an extra `private`
+  folder. A single `/private/manual.pdf` becomes `./downloads/manual.pdf`.
+- Existing files are replaced **only after** their replacement finishes successfully.
+- `--resume` keeps tracked partials if interrupted. Use it from the first attempt.
 
-## Authentication and password prompts
+Prefer `ftps://`: it encrypts the connection and checks the server certificate.
+It means **explicit FTPS**, normally on port 21—not SFTP or implicit FTPS on port
+990. Use `ftp://` only when necessary; it sends credentials and data in plaintext.
 
-For authenticated servers, `jesusftp` prompts for the password only when the URL or
-`--user` selects a non-anonymous account. The prompt does not echo the password:
+The terminal shows each active file's progress. Scroll with ↑/↓ or `j`/`k`, page
+with PgUp/PgDn, and cancel with `q` or Ctrl+C. **Let there be files** is the caption;
+**Downloaded**, **Skipped**, and **Failed** are the actual counts.
 
-```sh
-jesusftp ftps://ftp.example.org/private --user saint -o ./downloads
-```
+## Stop now, continue later
 
-The Linux password prompt reads from `/dev/tty`, never from piped stdin.
-This keeps `printf '/a\n/b\n' | jesusftp ... --from - --user saint` intact.
-With no controlling terminal, missing credentials produce an error instead of
-reading filenames as a password or silently submitting an empty password.
-Ctrl+C or SIGTERM cancels the prompt and restores terminal echo.
+**Lazarus, come forth.** Rerun the same download command with `--resume`, the same
+source, and the same output directory. This only reuses partials saved by an
+earlier resume-enabled attempt; adding the flag afterward cannot recover an
+ordinary interrupted download.
 
-An explicit password in the URL is also accepted, but it may be exposed in shell
-history or process listings. `--user` overrides the URL username. `--insecure`
-explicitly disables certificate verification; use it only for a trusted test
-environment. System certificate roots are used normally; Go's `SSL_CERT_FILE`/
-`SSL_CERT_DIR` are available on supported Unix platforms for a private CA.
+Resume and skipping are different:
 
-## Parallel downloads
-
-- **4–16 transfer workers automatically**, based on available Go CPU parallelism; `-j N` overrides the default, up to 128.
-- Persistent worker-owned FTP sessions; a separate session discovers directories while downloads run.
-- Bounded job queue of twice the worker count. No complete-tree manifest before the first download.
-- Reused 128 Kbl buffers, allocated only when a worker actually needs one.
-- `MLST`/`MLSD` where supported, with `SIZE`, `CWD`, and legacy `LIST` fallbacks.
-- Path, size, and modification-time filtering before `RETR`; excluded directories are not traversed.
-- Progress sampled at 10 Hz, not one UI message per packet.
-
-Parallelism is **across files**. One large file uses one data connection; there is no segmented-download claim. The network, server, disk, and FTP round trips still set the ceiling. Directory listings are buffered by the FTP library one directory at a time; memory is not independent of the largest individual listing or tree depth. FTP requires a fresh data socket per file, so very high file rates can exhaust a misconfigured server's passive-port pool.
-
-### Measured performance
-
-Local Linux x86-64 smoke run, Go 1.27.1, pyftpdlib 2.2.0 over loopback, source/destination on tmpfs, 16 automatically selected workers:
-
-| Workload | Observed transfer time | Integrity check |
-| --- | --- | --- |
-| 100,000 tiny files in 100 directories | 29.1 seconds; 19.9 Mbl peak client RSS | Every downloaded file matched its source exactly |
-| One 256 Mbl file | 0.123 seconds | Matching SHA-256 |
-
-These are local protocol/scale checks, **not WAN or physical-disk benchmarks**. The scale server used a reusable passive-port range after its default ephemeral-port allocation exhausted available ports. All files were actually downloaded, not skipped or merely enumerated. Separate real-server checks exercised FTP, verified FTPS, certificate rejection, legacy LIST, filters, credentials, manifests, connection quotas, partial failure, and signal cleanup. The actual dashboard was exercised in a terminal, including keyboard cancellation and a 52-column layout.
-
-## Destination layout
-
-- A single directory URL puts its **contents** directly in `--output` (default: current directory).
-- A file keeps its basename.
-- With multiple explicit roots, each directory keeps its basename; files still keep their basenames.
-- Explicit positional/manifest paths replace the URL path and are relative to the **server root**, not the URL directory. They are literal filenames; only the URL itself is percent-decoded.
-- Overlapping roots or duplicate output basenames are rejected rather than raced or silently merged.
-- Empty directories are preserved. Entries reported as symbolic links are not followed. Servers that dereference links in their listings cannot expose that distinction to the client.
-- Existing files are replaced by default, but only after a complete successful download. Remote modification times are preserved when supplied. Files are created privately (`0600`); remote permission bits are not copied.
-- `.jesusftp-resume` at the destination root is reserved for private resume state, even when resume is disabled.
-
-## File filters
-
-Patterns use [doublestar](https://github.com/bmatcuk/doublestar) syntax against slash-separated **destination-relative paths**. Quote globs so your shell does not expand them.
-
-- `--include '**/*.csv'`: CSV files at any depth. Repeated includes are ORed.
-- `--exclude '**/cache'`: prune matching directories and exclude matching files. Repeated excludes are ORed; exclusions win over inclusion.
-- `--min-size` / `--max-size`: inclusive file-size limits. `500Kbl` means 512000 blessings; `1Mbl` means 1048576. Whole numbers only; maximum size `0` means unlimited.
-- `--after`: strictly newer than an RFC3339 timestamp or a UTC `YYYY-MM-DD`. Files without usable modification metadata cannot pass this filter. Legacy `LIST` timestamps may have lower precision.
-- `--skip-existing`: skips an existing **regular file with equal size**. This is not checksum or content verification; use the default overwrite behavior when same-size contents may have changed.
-- `--dry-run`: discovers and filters without creating destination directories or fetching file bodies. It still makes FTP control/listing connections.
-
-Filters select files using remote metadata; they do not scan or transform file contents. Included patterns do not prune ancestor directories because those ancestors may contain matching descendants.
-
-## Terminal dashboard and JSON output
-
-The running banner reads `JESUSFTP   LET THERE BE FILES`.
-
-The interactive dashboard appears only when stdin and stderr are terminals. It shows literal states such as **Listing remote files**, **Downloading**, and **Resuming downloads**, followed by contextual wordplay: **Let there be files** for downloads, **Lazarus, come forth** for resumption. Captions do not rotate into unrelated warnings. Each active file has its own progress bar. Use ↑/↓ or `j`/`k` to scroll, and PgUp/PgDn to change pages. `q` or Ctrl+C **cancels** safely. `NO_COLOR` removes styling; `TERM=dumb` selects plain output.
-
-`Downloaded` shows completed files against discovered matching files; `Skipped`
-counts skipped entries, including excluded directories. `Failed` counts errors,
-including directory failures. During cancellation, **failed or stopped** includes
-interrupted transfers; it does not mean every queued file was attempted.
-`Workers` shows active download jobs against the worker limit, not total FTP
-connections. `Received` and `Avg` describe network traffic, not retained prefixes.
-
-**Complete · It is finished** is reserved for success. Previews explicitly say
-**Dry run complete** and **no files downloaded**; interrupted runs say **Cancelled**;
-unsuccessful runs say **Finished with errors**. Final counts use **downloaded**,
-**skipped**, **failed**, and **resumed** rather than alternate religious names.
-
-| Option | Behavior |
+| Option | What it does |
 | --- | --- |
-| `--plain` | No dashboard; final summary on stderr |
-| `--quiet`, `-q` | No dashboard or summary; errors still appear on stderr |
-| `--json` | One final JSON object on stdout; no dashboard |
-| `--from FILE` | Newline-separated remote paths; `-` reads stdin; empty manifests are rejected |
-| `--timeout 30s` | Timeout for a stalled operation, not the entire download run |
-| `--retries 2` | Retry failed downloads twice; reconnect and restart, or continue a validated partial with `--resume` |
-| `--resume` | Retain and resume tracked partial downloads (Lazarus mode) |
-| `--connections N`, `-j N` | Use N parallel download workers; `0` chooses automatically |
-| `--help`, `-h` | Show usage, options, and examples |
-| `--version` | Binary version |
+| Neither | Downloads selected files again; interrupted partials are normally removed. |
+| `--resume` | Keeps tracked partials and continues them when remote metadata still matches. Completed files are downloaded again. |
+| `--skip-existing` | Skips an existing regular file with the same size. It does **not** compare contents. |
 
-Download options may appear before or after the URL or alias. Use `--` to end option parsing before paths beginning with `-`. Configuration management begins with `jesusftp config`; `jesusftp config --help` explains its subcommands.
-
-JSON has `snapshot` and `error` fields. Snapshot keys include `Discovered`, `Completed`, `Resumed`, `Skipped`, `Failed`, `Blessings`, `ProgressBlessings`, `TotalBlessings`, `Active`, `Workers`, `Listing`, `Current`, `ActiveFiles`, `Elapsed`, and `Errors`. `ActiveFiles` contains one `{Path, Blessings, TotalBlessings, ResurrectedBlessings}` entry per active transfer. **These JSON keys are unchanged by the clearer interface wording.** `Elapsed` is nanoseconds. `Blessings` counts all received data, including retransmissions, but never credits a retained prefix as new traffic. `ProgressBlessings` includes the active retained prefix and same-size skipped files, and removes failed attempts. `ResurrectedBlessings` is the active file's reused prefix; `Resumed` counts successfully completed files that reused one. Totals grow during discovery and may change when resume mode refreshes remote metadata. `Skipped` also counts pruned directory entries, not the unknown number of descendants beneath them. `Failed` may include directory failures and cancelled transfers. Only the latest 20 errors are retained.
-
-Exit codes: **0** success, **1** transfer/output/credential failure (including partial success), **2** invalid invocation or configuration, **130** cancellation. Theology does not change process semantics.
-
-## File safety
-
-By default, files stream into unique `.jesusftp-*` temporaries beside the destination. Only a successful FTP completion response, exact expected size, closed local file, and timestamp update permit the final rename. Without `--resume`, failed/interrupted attempts are removed. Existing destination files remain intact until a complete transfer succeeds. This validates transfer size and protocol completion, **not cryptographic integrity**. Atomic rename is not a power-loss durability guarantee; no per-file `fsync` is imposed on the fast path.
-
-Destination operations use Go's `os.Root` to confine filesystem access, including symlink traversal. Unsafe listing names are rejected; terminal control characters are removed from displayed remote text. Server-provided error strings are redacted for the active password.
-
-### Resuming downloads — Lazarus, come forth
-
-`--resume` retains interrupted transfers in a private `.jesusftp-resume` directory
-under the destination. Rerun with the same source, destination, and `--resume`;
-automatic retries can reuse the same tracked partial too. No passwords are saved.
-
-- A partial is reused only when its connection identity, remote path, size, and available modification time match. Remote metadata is refreshed before and after transfer. Missing timestamps or changed metadata cause a fresh download.
-- A server that rejects REST, or sends an overlong response after accepting it, gets a fresh connection and a full restart—even with `--retries 0`.
-- Existing final files and untracked old temporaries are never treated as resumable prefixes. Even a full-size tracked partial still requires a successful FTP completion before promotion.
-- Per-file bars include the retained prefix; the dashboard announces **Resuming downloads · Lazarus, come forth** and the final summary counts **resumed** files. Network rates count only newly received data.
-- Completed files are not automatically skipped. `--skip-existing` takes precedence when explicitly requested, but equal size is not proof of equal contents. `--dry-run` creates no partial state.
-- One Lazarus invocation owns a destination at a time; its workers still download files in parallel. Successful transfers remove their tracking files. With no run active, the directory may be removed to discard retained partials, including leftovers from skipped files.
-- Partials and final files must share a filesystem for atomic promotion. Metadata matching is **not a checksum**: it cannot detect changed content whose size and timestamp remain identical, or establish trust in a dishonest server.
-
-Without Lazarus mode, retries start fresh. SIGKILL, machine failure, or process
-termination without cleanup can leave ordinary `.jesusftp-*` temporaries; these
-are never promoted or blindly resumed. Local files absent from the server are
-**not deleted**.
-
-A discovery connection is separate from transfer connections. Extremely restrictive servers may need fewer workers with `-j 1`, and concurrent discovery/transfers require at least two permitted control sessions. Auto mode backs off on connection pressure; it cannot bypass server quotas. Unreadable directories fail the run rather than silently reporting a complete mirror. The underlying FTP library may ignore listing records it cannot parse; use standards-compliant MLSD/LIST servers.
-
-This is a downloader, not an FTP server, uploader, SFTP client, or bidirectional synchronizer.
-
-## Installing and updating the binary
-
-`make install` builds a static binary for the native Linux architecture and installs it as
-`~/.local/bin/jesusftp`. Put that directory on `PATH`, or use
-`sudo make install PREFIX=/usr/local` for a system-wide install. Rebuild and
-replace the installed binary later with:
+To resume partials **and** skip equal-size completed files:
 
 ```sh
+jesusftp ftps://ftp.example.org/private --user noah -o ./downloads --resume --skip-existing
+```
+
+`--skip-existing` wins when both apply, even if equal-size contents have changed.
+Leave it off when you need to replace potentially stale files. Resume starts fresh
+if required timestamps are missing, metadata changes, or the server cannot resume.
+Metadata matching is not checksum verification.
+
+## Save a connection — the Book of Connections
+
+Thou shalt not type the same hostname forty times. Save the server address,
+remote path, and username under the nickname `ark`:
+
+```sh
+jesusftp config add ark ftps://ftp.example.org/private --user noah
+jesusftp ark -o ./downloads --resume
+```
+
+The second command does the same download as the direct URL above. Passwords are
+still prompted, never stored in the alias. Use `jesusftp config list` to see saved
+connections and `jesusftp config --help` for optional editing/removal commands.
+
+## Choose what to download
+
+The examples below use `ark` from the previous section. First, count matching ZIP
+files and their total size without downloading; then run the same selection:
+
+```sh
+jesusftp ark -o ./downloads --resume --include '**/*.zip' --min-size 1Mbl --dry-run
+jesusftp ark -o ./downloads --resume --include '**/*.zip' --min-size 1Mbl
+```
+
+**A dry run reports totals, not a filename list.** It still connects to the server,
+but writes no files or directories. It does not check local files for
+`--skip-existing`, so it is not a prediction of how many files that option will skip.
+
+Sizes use **blessings**: `bl`, `Kbl`, `Mbl`, `Gbl`, `Tbl`. One blessing is one octet;
+each larger unit is 1024 times the previous one. These measure data, not files.
+`1Mbl` means 1048576 blessings; rates use the same units per second.
+
+| Option | Use it for |
+| --- | --- |
+| `--include '**/*.zip'` | Include matching destination-relative paths. Repeated includes are ORed. |
+| `--exclude '**/cache'` | Skip matching files/directories; excluded directories are not traversed. Exclusions win. |
+| `--min-size 1Mbl`, `--max-size 2Gbl` | Inclusive size limits; whole numbers only. Maximum `0` means unlimited. Ordinary size suffixes also work. |
+| `--after 2026-01-01` | Files strictly newer than a UTC date or RFC3339 timestamp. Missing timestamps do not match. |
+| `-j 4` | Four parallel file-download workers. Default: 4–16 automatically; maximum: 128. One large file still uses one connection. |
+| `--timeout 30s` | Limit a stalled operation, not the entire download. |
+| `--retries 2` | Retry failed downloads twice; reuse tracked partials when `--resume` permits it. |
+| `--plain` | No dashboard; final summary on stderr. |
+| `--quiet` | No dashboard or summary; errors still appear. |
+| `--json` | Machine-readable transfer result on stdout; see the scripting reference below. |
+
+Quote patterns so your shell does not expand them. Use `jesusftp --help` for all
+options. Filters use [doublestar syntax](https://github.com/bmatcuk/doublestar).
+
+## Development and updates
+
+From the cloned repository:
+
+```sh
+go mod download             # fetch dependencies
+make build                  # compile a local jesusftp binary
+go run . --help             # run the working tree without installing
+make test                   # run all tests with the race detector
+```
+
+`make test` also requires **GCC or Clang and CGO enabled**. Tests use loopback TCP
+and Linux pseudo-terminals; no separate FTP daemon is needed. Format changed Go
+files with `gofmt` before committing.
+
+- `main.go`: executable entrypoint.
+- `internal/cli/`: options, saved connections, password prompts, dashboard, summaries.
+- `internal/transfer/`: discovery, filters, workers, safe writes, progress, resume.
+- Tests live beside the code; transfer tests include a real-TCP FTP fixture.
+- `Makefile`: build, atomic install/update, and test commands.
+
+Use `-o ./downloads` for manual checks. That folder, the compiled binary, and
+`.jesusftp-*` transfer state are ignored by Git. Downloads elsewhere are not
+automatically ignored. Keep credentials out of the checkout and test fixtures.
+
+To update an installed copy from newer source:
+
+```sh
+git pull --ff-only
 make update
 ```
 
-`make update` rebuilds from the current checkout; it does not fetch a release or
-pull source changes. Use the same `PREFIX` or `BINDIR` override as the original
-installation. Builds use private, unique staging directories and atomically
-replace the installed executable only after success. Failed builds leave the
-installed command intact; concurrent installs do not share temporary files.
-Set `VERSION=1.2.3` when building or updating to embed a release version.
+`make update` **only rebuilds the current checkout**; it does not fetch updates.
+Use the same `PREFIX`/`BINDIR` override as your original install. Failed builds
+leave the installed binary intact. `make build VERSION=1.2.3` embeds a version.
 
-## Development
+## Reference
 
-Use the clone above. In addition to the build requirements, `make test` needs
-a C compiler (GCC or Clang) and CGO enabled for Go's race detector. Tests use
-loopback TCP sockets and Linux pseudo-terminals; allow both in sandboxed environments.
+<details>
+<summary>Connections, passwords, and remote paths</summary>
 
-```sh
-go mod download             # fetch the module dependencies
-make build                  # compile the local jesusftp binary
-go run . --help             # run the working tree without installing it
-make test                   # all tests, including the race detector
-```
+- Aliases are stored in `$XDG_CONFIG_HOME/jesusftp/config.json`, or
+  `~/.config/jesusftp/config.json`. `jesusftp config path` prints the location.
+  The config is ordinary JSON; `config show ark` prints an alias's saved values.
+- `config add` refuses duplicates. `config set NAME URL [--user USER]` replaces
+  an existing alias completely, including its optional username.
+  `config remove NAME` deletes one. These are maintenance operations, not setup steps.
+- Alias names are case-sensitive: an ASCII letter followed by letters, numbers,
+  `_`, or `-`. `config` is reserved. Explicit `--user` overrides the saved user.
+- The config is saved atomically with private permissions. Password-bearing URLs
+  and password fields are rejected in saved connections. Invalid config is not overwritten.
+- Password prompts use `/dev/tty`, leaving piped stdin alone. Without a controlling
+  terminal, missing required passwords produce an error. URL passwords are accepted
+  for direct connections but risk exposure in shell history and process listings.
+- Without `-o`, files go into the current directory. A single directory contributes
+  its contents; with multiple explicit roots, each directory retains its basename.
+  Overlapping roots and duplicate output basenames are rejected.
+- Explicit remote paths replace the URL/alias path and are relative to the **server
+  root**. For example, `jesusftp ark /private/daily -o ./downloads --resume` selects
+  that directory, not `/private/private/daily`. Paths are literal filenames; only
+  the URL itself is percent-decoded.
+- `--from FILE` reads newline-separated remote paths; `--from -` reads stdin.
+  An empty manifest is rejected. Options may come before or after the URL/alias;
+  `--` ends option parsing.
+- FTPS uses system CA roots. `SSL_CERT_FILE`/`SSL_CERT_DIR` can select a private CA
+  on supported Unix platforms. `--insecure` disables certificate verification;
+  do not use it as a routine connection fix.
 
-Format changed Go files with `gofmt` before committing. Use `make update` when
-you want to replace the installed command with your current working tree.
-For manual download checks, use `-o ./downloads` to keep received files separate
-from source files. Never put real credentials in fixtures, examples, or commits.
+</details>
 
-### Code layout
+<details>
+<summary>File safety and resume limits</summary>
 
-- `main.go`: executable entrypoint and exit status.
-- `internal/cli/`: option parsing, connection configuration, hidden password
-  input, terminal dashboard, and summaries.
-- `internal/transfer/`: FTP/FTPS discovery, filtering, parallel workers, safe
-  destination writes, progress accounting, and resumable partial storage.
-- `internal/cli/*_test.go`: CLI behavior, configuration, terminal layout,
-  and password-prompt regressions.
-- `internal/transfer/*_test.go`: transfer/state regressions and a real-TCP FTP
-  fixture, without an external server dependency.
-- `Makefile`: native static builds, atomic install/update, and the test command.
+- Files are promoted only after a successful FTP completion response, exact expected
+  size, successful local close, and timestamp update when supplied. Existing final
+  files remain intact on failure. This is not cryptographic integrity verification
+  or a power-loss durability guarantee; no per-file `fsync` is imposed.
+- Files are created privately (`0600`). Remote modification times are preserved
+  when available, but remote permission bits are not copied. Empty directories
+  are preserved; entries reported as symbolic links are not followed.
+- Filesystem access is confined to the destination using Go's `os.Root`.
+  Unsafe listing names are rejected. Local files absent from the server are not deleted.
+- `--resume` uses the reserved `.jesusftp-resume` directory inside the destination.
+  Only one resume-enabled invocation can own that destination at a time; its
+  workers still run in parallel. Partials and final files must share a filesystem.
+- Reuse checks the connection identity, remote path, size, and available modification
+  time. Metadata is refreshed before and after transfer. It cannot detect changed
+  content with identical size/timestamp or make a dishonest server trustworthy.
+- Unsupported resumption, or an overlong response after a resume request, triggers
+  a fresh connection and full restart even with `--retries 0`. Untracked files are
+  never treated as partials; even full-size tracked partials require FTP completion.
+- Successful transfers remove their tracking files. With no run active, you can
+  remove `.jesusftp-resume` to discard retained partials. Abrupt termination can also
+  leave ordinary `.jesusftp-*` temporaries; these are not blindly resumed.
+- Discovery has its own FTP connection. If the server limits connections, try
+  `-j 1`; concurrent discovery and download still need at least two allowed sessions.
+  Listings depend on server metadata; legacy formats can lose timestamp precision
+  or contain records the FTP library cannot parse. No universal speed claim here.
 
-### Local files and verification
+</details>
 
-`.gitignore` excludes compiled binaries, test/profile/coverage outputs, local
-workspace files, editor leftovers, environment files and private keys, the example
-download destinations (`downloads/` and `promised-land/`), and `.jesusftp-*`
-temporary/resume state. Source, `go.mod`, and `go.sum` remain versioned.
-Connection configuration normally lives outside the checkout. Downloads to other
-destinations are not automatically ignored; keep them outside the repository or
-add an explicit local exclusion before staging changes.
+<details>
+<summary>Dashboard counters, JSON, and exit codes</summary>
 
-The test fixture is implemented in Go and requires no external FTP daemon.
-Its cases cover filtering before RETR, truncated transfers, retry
-integrity/progress, cancellation of stalled data sockets, destination
-confinement, malicious listing paths and overflowing file sizes, literal/long
-filenames, symlink-safe skipping, and servers without SIZE. Lazarus regressions
-cover cross-run/retry continuation, REST refusal and ignored offsets, changed or
-missing metadata, failed FTP completion, retained cancellation, private-state
-locking, and symlink/hard-link rejection. CLI regressions cover
-connection persistence, username precedence, rejected-secret protection,
-concurrent configuration edits, blessing-size boundaries, terminal paging/resizing,
-and real pseudo-terminal password cancellation/EOF with terminal restoration.
+The dashboard requires terminal stdin and stderr. `TERM=dumb` selects plain output;
+`NO_COLOR` removes styling. `Workers` counts active download jobs against the worker
+limit, not all FTP connections. `Received` and `Avg` count new network traffic,
+including retries, not retained prefixes; `Avg` is the average over the run.
+Per-file percentages include retained prefixes.
+
+After reaching the transfer stage, `--json` emits an object with `snapshot` and
+`error` fields. Early CLI, configuration, manifest, or credential errors may instead
+leave stdout empty and report on stderr. Always check the exit status. JSON dry
+runs report counts and size, not filenames or human captions.
+
+Snapshot keys: `Discovered`, `Completed`, `Resumed`, `Skipped`, `Failed`, `Blessings`,
+`ProgressBlessings`, `TotalBlessings`, `Active`, `Workers`, `Listing`, `Current`,
+`ActiveFiles`, `Elapsed`, `Errors`.
+
+- `Blessings` counts all received data, including retries.
+- `ProgressBlessings` includes completed files, active progress, retained prefixes,
+  and same-size skips; failed attempts are removed. Totals can change during discovery
+  or resume metadata refreshes.
+- `Resumed` counts completed files that reused a prefix. `ActiveFiles` entries have
+  `Path`, `Blessings`, `TotalBlessings`, and `ResurrectedBlessings` (the reused prefix).
+- `Skipped` counts entries, including excluded directories, not their unknown descendants.
+  `Failed` may include directory failures and cancelled transfers. In human cancellation
+  summaries, “failed or stopped” does not mean every queued file was attempted.
+- `Elapsed` is nanoseconds. Only the latest 20 errors are retained.
+
+Exit codes: **0** success; **1** transfer-stage/validation, output, or credential
+failure, including partial success; **2** CLI parsing/configuration/input errors;
+**130** cancellation.
+
+</details>
