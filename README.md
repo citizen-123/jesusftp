@@ -144,6 +144,9 @@ go run . --help             # run the working tree without installing
 make test                   # run all tests with the race detector
 ```
 
+The Go module is `github.com/citizen-123/jesusftp`. The Makefile uses `-trimpath`
+to keep local source-directory paths out of built and installed binaries.
+
 `make test` also requires **GCC or Clang and CGO enabled**. Tests use loopback TCP
 and Linux pseudo-terminals; no separate FTP daemon is needed. Format changed Go
 files with `gofmt` before committing.

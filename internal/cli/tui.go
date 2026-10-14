@@ -13,7 +13,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/x/ansi"
-	"github.com/jesusftp/jesusftp/internal/transfer"
+	"github.com/citizen-123/jesusftp/internal/transfer"
 )
 
 type engineDone struct {

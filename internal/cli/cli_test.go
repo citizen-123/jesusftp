@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jesusftp/jesusftp/internal/transfer"
+	"github.com/citizen-123/jesusftp/internal/transfer"
 )
 
 func TestParseSizeBoundaries(t *testing.T) {

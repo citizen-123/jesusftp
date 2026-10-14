@@ -1,4 +1,4 @@
-module github.com/jesusftp/jesusftp
+module github.com/citizen-123/jesusftp
 
 go 1.27.1
 
