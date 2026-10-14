@@ -19,12 +19,12 @@ import (
 	"time"
 
 	"github.com/charmbracelet/x/term"
-	"github.com/jesusftp/jesusftp/internal/transfer"
+	"github.com/citizen-123/jesusftp/internal/transfer"
 	"golang.org/x/sys/unix"
 )
 
 // Version is replaced at build time with -ldflags
-// "-X github.com/jesusftp/jesusftp/internal/cli.Version=…".
+// "-X github.com/citizen-123/jesusftp/internal/cli.Version=…".
 var Version = "dev"
 
 type stringList []string

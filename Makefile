@@ -3,7 +3,7 @@ VERSION ?= 0.1.0
 PREFIX ?= $(HOME)/.local
 BINDIR ?= $(PREFIX)/bin
 BINARY ?= jesusftp
-LDFLAGS ?= -s -w -X github.com/jesusftp/jesusftp/internal/cli.Version=$(VERSION)
+LDFLAGS ?= -s -w -X github.com/citizen-123/jesusftp/internal/cli.Version=$(VERSION)
 
 .PHONY: build install update test
 build:

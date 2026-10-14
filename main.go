@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"github.com/jesusftp/jesusftp/internal/cli"
+	"github.com/citizen-123/jesusftp/internal/cli"
 )
 
 func main() {
