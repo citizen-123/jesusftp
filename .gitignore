@@ -1,0 +1,38 @@
+# Built commands and release outputs
+/jesusftp
+/jesusftp.exe
+/bin/
+/build/
+/dist/
+
+# Go test binaries, coverage, and profiles
+*.test
+*.prof
+*.pprof
+/coverage/
+/coverage*.out
+/coverage*.html
+
+# Local multi-module workspace
+/go.work
+/go.work.sum
+
+# Downloads from the documented examples and private transfer state
+/downloads/
+/promised-land/
+.jesusftp-*
+
+# Local secrets; sanitized examples may be committed explicitly
+.env
+.env.*
+!.env.example
+*.key
+*.p12
+*.pfx
+.netrc
+
+# Editor and operating-system leftovers
+*.swp
+*.swo
+*~
+.DS_Store
